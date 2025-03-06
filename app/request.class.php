@@ -17,6 +17,13 @@ class Request
 			break;
 		}
 
+		if( $_SERVER['REQUEST_METHOD'] == 'GET' && isset( $_GET ) ){
+			$url_params = $_GET;
+			unset($url_params['path']);
+
+			$data = array_merge($url_params, $data);
+		}
+
 		return $data;
 	}
 

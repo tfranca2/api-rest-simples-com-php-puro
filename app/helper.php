@@ -1,7 +1,6 @@
 <?php
 
 function dd() {
-	header('Content-type: application/xhtml');
 	$bt = debug_backtrace();
 	$caller = array_shift( $bt );
 	echo '- '.$caller['file'].':<b>'.$caller['line'].'</b><br/>';

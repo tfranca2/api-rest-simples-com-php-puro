@@ -1,79 +1,93 @@
 <?php
 
-class Rotas
+class Routes
 {
-	private $listaRotas = [''];
-	private $listaCallback = [''];
+	private $route_list = [];
 
-	public function get( $rota, $callback ){
-		return $this->add( 'GET', $rota, $callback );
-	}
-	
-	public function post( $rota, $callback ){
-		return $this->add( 'POST', $rota, $callback );
-	}
-	
-	public function put( $rota, $callback ){
-		return $this->add( 'PUT', $rota, $callback );
-	}
-	
-	public function delete( $rota, $callback ){
-		return $this->add( 'DELETE', $rota, $callback );
-	}
-
-	private function add( $metodo, $rota, $callback )
+	public function __construct()
 	{
-		$this->listaRotas[] = strtoupper($metodo).':'.$rota;
-		$this->listaCallback[] = $callback;
-
-		return $this;
+		$this->add( '', '', '', '' );
 	}
 
-	public function call( $url )
+	private function add( $verb, $route, $class, $method )
+	{
+		$obj = [
+			'route' => $verb .'://'. $route,
+			'class' => $class,
+			'method' => $method,
+		];
+
+		if( ! array_search( $obj['route'], array_column( $this->route_list, 'route' ) ) )
+			$this->route_list[] = $obj;
+	}
+
+	public function get( $route, $class, $method )
+	{
+		$this->add( 'GET', $route, $class, $method );
+	}
+	
+	public function post( $route, $class, $method )
+	{
+		$this->add( 'POST', $route, $class, $method );
+	}
+	
+	public function put( $route, $class, $method )
+	{
+		$this->add( 'PUT', $route, $class, $method );
+	}
+	
+	public function delete( $route, $class, $method )
+	{
+		$this->add( 'DELETE', $route, $class, $method );
+	}
+
+	public function resource( $route, $class )
+	{
+		$this->get( $route, $class, 'index' );
+		$this->get( $route .'/{id}', $class, 'show' );
+		$this->post( $route, $class, 'store' );
+		$this->put( $route .'/{id}', $class, 'update' );
+		$this->delete( $route .'/{id}', $class, 'destroy' );
+	}
+
+	public function call( $path )
 	{
 		$index = 0;
 		$params = [];
-		$callback = '';
-		$methodServer = $_SERVER['REQUEST_METHOD'];
-		$methodServer = isset($_POST['_method']) ? $_POST['_method'] : $methodServer;
-		$url = $methodServer.":/".$url;
-		$e_url = explode('/', $url);
+		$path_segments = explode('/', $_SERVER['REQUEST_METHOD'] .'://'. $path);
 
-		foreach( $this->listaRotas as $i => $rota ){
-			$e_rot = explode('/', $rota);
+		foreach( $this->route_list as $i => $rota ){
+			$route_segments = explode('/', $rota['route']);
 
-			if( count( $e_rot ) != count( $e_url ) )
+			if( count( $route_segments ) != count( $path_segments ) )
 				continue;
 
-			$igual = true;
-			foreach( $e_rot as $j => $segmento_rota  ){
-				$nome_parametro = str_replace('{', '', $segmento_rota);
-				$nome_parametro = str_replace('}', '', $nome_parametro);
-
-				if( substr($segmento_rota, 0, 1) == '{' ){
-					$params[ $nome_parametro ] = $e_url[$j];
+			$found = true;
+			foreach( $route_segments as $j => $segment  ){
+				if( substr($segment, 0, 1) == '{' ){
+					$params[ preg_replace( '/[\{\}]/', '', $segment ) ] = $path_segments[$j];
 					continue;
 				}
 
-				if( $segmento_rota != $e_url[$j] ){
-					$igual = false;
+				if( $segment != $path_segments[$j] ){
+					$found = false;
 					break;
 				}
 			}
 
-			if( $igual )
+			if( $found ){
 				$index = $i;
+				break;
+			}
 		}
 
-		if( $index == 0 )
-			Response::json(codigo:404);
-
-		$callback = explode("::", $this->listaCallback[$index]);
-		$class = isset($callback[0]) ? $callback[0] : '';
-		$method = isset($callback[1]) ? $callback[1] : '';
+		$class = $this->route_list[ $index ]['class'];
+		$method = $this->route_list[ $index ]['method'];
 
 		if( class_exists( $class ) )
 			if( method_exists( $class, $method ) )
-				return call_user_func_array( [ new $class(), $method ], $params );
+				return call_user_func_array( [ new $class, $method ], $params );
+
+		Response::json(code:404);
 	}
 }

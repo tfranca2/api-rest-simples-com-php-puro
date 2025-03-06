@@ -1,13 +1,12 @@
 <?php
+require_once "autoload.php";
+
+$route = new Routes();
+$route->get('clientes', Clientes::class, 'index');
+$route->get('clientes/{id}', Clientes::class, 'show');
+$route->post('clientes', Clientes::class, 'store');
+$route->put('clientes/{id}', Clientes::class, 'update');
+$route->delete('clientes/{id}', Clientes::class, 'destroy');
+
 header('Access-Control-Allow-Origin: *');
-date_default_timezone_set("America/Sao_Paulo");
-require_once "autoload.class.php";
-
-$rota = new Rotas();
-$rota->get('/clientes', 'Clientes::index');
-$rota->get('/clientes/{id}', 'Clientes::show');
-$rota->post('/clientes', 'Clientes::store');
-$rota->put('/clientes/{id}', 'Clientes::update');
-$rota->delete('/clientes/{id}', 'Clientes::destroy');
-
-@$rota->call($_GET['path']);
+@$route->call($_GET['path']);

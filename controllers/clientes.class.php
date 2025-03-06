@@ -9,7 +9,7 @@ class Clientes
 
 	public function show($id)
 	{
-		// Response::file('documento_de_teste.pdf');
+		// Response::file('test_document.pdf');
 		Response::json(["cliente" => $id]);
 	}
 
@@ -28,6 +28,6 @@ class Clientes
 
 	public function destroy($id)
 	{
-		Response::json(codigo:204);
+		Response::json(code:204);
 	}
 }
